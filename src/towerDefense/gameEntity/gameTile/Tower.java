@@ -45,16 +45,14 @@ public abstract class Tower extends towerdefense.gameEntity.gameTile.GameTile {
                 if(pos.distance(enemy.pos)<range && enemy.active && enemy.alive) {
                     lastShoot=getTotalTime();
                     bullet.enemy=enemy;
-                    bullet.readyToFire=true;
+                    bullet.readyToFire= false;
                     bullet.active=true;
-                    bullet.drX=enemy.pos.x-bullet.pos.x;
-                    bullet.drY=enemy.pos.y-bullet.pos.y;
+            
                     return;
                 }
             }
         }
         bullet.move();
-        if(bullet.pos.distance(pos)>range) bullet.active=false;
         if(bullet.active==false) { bullet.pos.x = pos.x; bullet.pos.y=pos.y; bullet.enemy=null;}
     }
 
