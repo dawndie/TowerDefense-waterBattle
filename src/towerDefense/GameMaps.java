@@ -1,157 +1,102 @@
-package towerdefense;
+package Land;
 
 import java.io.BufferedReader;
-import java.io.ObjectInput;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
-import towerdefense.gameEntity.gameTile.MachineGunTower;
-import towerdefense.gameEntity.gameTile.NormalTower;
-import towerdefense.gameEntity.gameTile.SniperTower;
-import towerdefense.gameEntity.gameTile.Spawner;
-import towerdefense.gameEntity.gameTile.Target;
-import towerdefense.gameEntity.gameTile.Tower;
+import javax.swing.JFileChooser;
 
-public class GameMaps {
-    private boolean first=true;
-    public boolean change=false;
-    public towerdefense.Position changePos=new towerdefense.Position();
-    towerdefense.GameField gameField;
-    int towerSize=0;
-    public int[][] map;
-    public int[][] towerMap;
-    public int[][] draw;
-    public int[][] water;
-    public int[][] decorate;
-    public Tower[] tower;
-    public towerdefense.Position spawnerMatrixPosition;
-    public towerdefense.Position targetMatrixPosition;
-    public Target target;
-    public Spawner spawner;
-    public GameMaps(towerdefense.GameField gameField) {
-        this.gameField=gameField;
-        target= new Target();
-        spawner= new Spawner();
-        map = new int[14][24];
-        towerMap = new int[14][24];
-        tower= new Tower[14*24];
-        draw= new int [14][24];
-        water= new int [14][24];
-        decorate= new int [14][24];
-        loadData("res\\Config\\map.txt", map);
-        loadData("res\\Config\\tower.txt", towerMap);
-        loadData("res\\Config\\draw.txt", draw);
-        loadData("res\\Config\\maps.txt" ,water);
-        loadData("res\\Config\\decorate.txt",decorate);
-        buildTowerMap();
-        findSpecialPosition();
-    }
+import GamePanels.GameWorld;
 
-    public int getTowerSize() {
-        return towerSize;
-    }
 
-    public int[][] getMap() {
-        return map;
-    }
 
-    public int[][] getTowerMap() {
-        return towerMap;
-    }
+public class LoadLand {
+	
+	String fileName="Map01.txt";
+	GameWorld world;
 
-    public Tower[] getTower() {
-        return tower;
-    }
+	public LoadLand(GameWorld worldz) {
+		world = worldz;
+	}
+	
+	
+	/**
+	 * reads the file and restores the map
+	 */
+	public void readFile() {
+		
+		try {
+			// variables needed in making land
+			String sCurrentLine;
+			int rows = 0;
+			int columns = 0;
+			int row = 0;
+			int column = 0;
+			int landType = -1;
+			BufferedReader br = new BufferedReader(
+					new FileReader(fileName));
+			int counterFirst = 0;
+			BasicLand landToLoad[][];
+			landToLoad = new BasicLand[1][1];
+			// reads and makes the land
+			while ((sCurrentLine = br.readLine()) != null) {
+				if (counterFirst == 0) {
+					rows = Integer.parseInt(sCurrentLine.substring(0,
+							sCurrentLine.indexOf(" ")));
+					columns = Integer.parseInt(sCurrentLine
+							.substring(sCurrentLine.indexOf(" ") + 1));
+					landToLoad = new BasicLand[rows][columns];
+					counterFirst++;
+				} else {
+					row = Integer.parseInt(sCurrentLine.substring(0,
+							sCurrentLine.indexOf(" ")));
+					column = Integer.parseInt(sCurrentLine.substring(
+							sCurrentLine.indexOf(" ") + 1,
+							sCurrentLine.indexOf(".")));
+					landType = Integer.parseInt(sCurrentLine
+							.substring(sCurrentLine.indexOf(".") + 1,sCurrentLine.indexOf("!")));
 
-    public Target getTarget() {
-        return target;
-    }
+					landToLoad[row][column] = new BasicLand(world,landType, row,
+							column);
 
-    public Spawner getSpawner() {
-        return spawner;
-    }
+				}
+				world.setLand(landToLoad);
+			}
+			br.close(); 
+		} catch (FileNotFoundException e) {
 
-    public towerdefense.Position getSpawnerMatrixPosition() {
-        return spawnerMatrixPosition;
-    }
+			e.printStackTrace();
 
-    public towerdefense.Position getTargetMatrixPosition() {
-        return targetMatrixPosition;
-    }
+		} catch (IOException e) {
 
-    private boolean loadData(String filePath, int[][] arr) {
-        Path path = Paths.get(filePath);
-        Charset charset = Charset.forName("US-ASCII");
-        try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
-            String line = null;
-            int count = 0;
-            while ((line = reader.readLine()) != null) {
-                String k[] = line.split(" ");
-                if (k.length == 1) {
-                    arr = new int[Integer.parseInt(k[0])][Integer.parseInt(k[0])];
-                } else {
-                    for (int i = 0; i < k.length; i++) {
-                        arr[count][i] = Integer.parseInt(k[i]);
-                    }
-                    count++;
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
+			e.printStackTrace();
 
-    private void findSpecialPosition() {
-        for (int i = 0; i < 14; i++) {
-            for (int j = 0; j < 24; j++) {
-                if (this.map[i][j] == 3) {
-                    spawnerMatrixPosition = new towerdefense.Position(i, j);
-                    spawner.setPos(j * 64 , i * 64);
-                } else if (this.map[i][j] == 2) {
-                    targetMatrixPosition = new towerdefense.Position(i, j);
-                    target.setPos(j * 64, i * 64);
-                }
-            }
-        }
-    }
+		}
+		
+	}
+	/**
+	 * loads the file
+	 */
+	public void fileLoader() {
 
-    public void buildTower(int i, int j) {
-        switch (towerMap[i][j]) {
-            case -1 : for(int k=0; k<towerSize; k++) {
-                if(tower[k]!=null&&tower[k].pos.equals(new towerdefense.Position(j*64, i*64))) {
-                    tower[k]=null; System.out.println("change sucess"); break;}
-            }
-                break;
-            case 1:
-                tower[towerSize]=new NormalTower(new towerdefense.Position(j*64, i*64), gameField); towerSize++;
-                break;
-            case 2:
-                tower[towerSize]=new MachineGunTower(new towerdefense.Position(j*64, i*64), gameField); towerSize++;
-                break;
-            case 3:
-                tower[towerSize]=new SniperTower(new towerdefense.Position(j*64, i*64), gameField); towerSize++;
-                break;
-        }
-    }
-
-    public void buildTowerMap() {
-        if(first) {
-            first=false;
-            towerSize=0;
-            for (int i = 0; i < 14; i++) {
-                for (int j = 0; j < 24; j++) {
-                    buildTower(i, j);
-                }
-            }
-        } else {
-            if(change) {
-                buildTower((int)changePos.x, (int)changePos.y);
-                change=false;
-            }
-        }
-    }
-
+		// code from
+		// http://www.java2s.com/Tutorial/Java/0240__Swing/GettingandSettingtheSelectedFileofaJFileChooserDialog.htm
+		JFileChooser chooser = new JFileChooser();
+		File f;
+		try {
+			f = new File(new File("filename.txt").getCanonicalPath());
+			chooser.setSelectedFile(f);
+			chooser.showOpenDialog(null);
+			File curFile = chooser.getSelectedFile();
+			if(curFile.getName().contains("txt"))
+			fileName = curFile.getName();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		
+		} 
+	}
 }
