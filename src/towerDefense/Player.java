@@ -2,8 +2,8 @@ package towerdefense;
 
 
 public class Player {
-    public int coin;
-    public int health;
+    public int coinage;
+    public int healthy;
 
     public Player() {
         this.health =100;
