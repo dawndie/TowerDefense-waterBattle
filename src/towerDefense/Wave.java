@@ -1,4 +1,3 @@
-package WaveRuner;
 
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
