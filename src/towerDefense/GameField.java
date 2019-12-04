@@ -65,7 +65,6 @@ public class GameField {
         if(spawning && index<enemiesList.size()) {
             System.out.println("index "+ index);
             timeLastSpawn = Clock.getTotalTime();
-            System.out.println("LIST"+enemiesList.size()+" SPWANING");
             enemiesList.get(index).active=true;
             enemiesList.get(index).alive=true;
             index++;
@@ -77,9 +76,7 @@ public class GameField {
         for(int i=0; i< stage.stageEnemies.size(); i++) {
             switch (stage.stageEnemies.get(i)) {
                 case 1: enemiesList.add(new SmallerEnemy(player, this)); break;
-                case 2: enemiesList.add(new NormalEnemy(player, this)); break;
-                case 3: enemiesList.add(new TankerEnemy(player, this)); break;
-                case 4: enemiesList.add(new BossEnemy(player, this)); break;
+              
             }
         }
         stage.stageEnemies.clear();
@@ -98,7 +95,7 @@ public class GameField {
         stage.stageNumber=stageNumber;
         stage.buildStageEnemy();
         buildGameEnemy();
-        System.out.println("STAGE NUMBER" + stage.stageNumber);
+    
     }
     public void update() {
         gameMaps.buildTowerMap();
@@ -107,27 +104,17 @@ public class GameField {
             waveNumber++;
             pivok+=level.startEnemies+(waveNumber-1)*level.enemiesPerWaveUp;
             timeLastWave=Clock.getTotalTime();
-            System.out.println("end wave");
         }
-        else endWave=false;
 
         if(endWave && index==enemiesList.size()) {
             endStage= true;
-            System.out.println("ENDSTAGE" + index);
+            System.out.println("ENDSTAGE + index);
         }
         winStage();
         if(winStage) {System.out.println("WIN STAGE "+ stageNumber);}
     }
 
     public void winStage() {
-        if(endStage==true) {
-            winStage=true;
-            for(Enemy e: enemiesList) {
-                if(e.alive) {
-                    winStage =false;
-                    return;
-                }
-            }
-        } else winStage=false;
+       
     }
 }
