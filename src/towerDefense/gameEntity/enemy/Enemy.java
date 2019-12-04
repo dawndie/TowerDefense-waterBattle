@@ -1,164 +1,369 @@
-package towerdefense.gameEntity.enemy;
-
-import static towerDefense.Clock.*;
+package Monsters;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.Vector;
 
-import javax.swing.ImageIcon;
+import Bullets.Bullet;
+import GamePanels.GameWorld;
+import Land.BasicLand;
 
-import towerdefense.GameField;
-import towerdefense.GameMaps;
-import towerdefense.Player;
-import towerdefense.Position;
-import towerdefense.gameEntity.GameEntity;
+public class BasicMonster implements Runnable {
 
-public abstract class Enemy implements GameEntity {
-    GameField gameField;
-    Player player;
-    boolean firstTime=true;
-    GameMaps gameMaps;
-    private int health;
-    public int realTimeHealth;
-    private int armor;
-    private float speed;
-    public int reward;
-    public boolean active;
-    public int damage;
-    public Position pos;
-    public boolean alive;
-    public String texturePath;
-    private int[] deltaPos= new int[2];
-    private float distance=0f;
-    private int mPosX;
-    private int mPosY;
+	int killReward = 20;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    public Enemy() {
-    }
+	/**
+	 * holds where the start of the monster will be drawn for x
+	 */
+	int moveX;
+	/**
+	 * holds where the start of the monster will be drawn for y
+	 */
+	int moveY;
+	/**
+	 * holds all the lands
+	 */
+	BasicLand allLand[][];
+	/**
+	 * holds if the monster is in the center of a piece of land
+	 */
+	boolean centerOfALand = true;
 
-    public Enemy(int health, int armor, float speed, int damage, int reward, String texturePath) {
-        alive = false;
-        active = false;
-        gameMaps = new GameMaps(gameField);
-        this.health = health;
-        this.realTimeHealth=this.health;
-        this.armor = armor;
-        this.speed = speed;
-        this.damage = damage;
-        this.reward = reward;
-        this.texturePath = texturePath;
-        pos = gameMaps.getSpawner().pos;
-        mPosX=(int)gameMaps.getSpawnerMatrixPosition().x;
-        mPosY=(int)gameMaps.getSpawnerMatrixPosition().y;
-    }
+	/**
+	 * holds the direction the monster is going
+	 */
+	int direction;
 
+	/**
+	 * used to easily identify the direction the monster is going
+	 */
+	int north = 0, east = 1, south = 2, west = 3;
 
-    public int getReward() {
-        return reward;
-    }
+	/**
+	 * holds the row and column
+	 */
+	int row, column;
 
-    public boolean isActive() {
-        return active;
-    }
+	/**
+	 * a monster starts out alive
+	 */
+	boolean isAlive = true;
 
-    public boolean isAlive() {
-        return alive;
-    }
+	/**
+	 * holds the speed of the monster. The lower the number the fast it goes
+	 */
+	long speedOfMonster = 20;
+	/**
+	 * holds the game world
+	 */
+	GameWorld world;
+	
+	private Vector<Bullet> incomingBullets= new Vector<Bullet>();
 
-    public int getAmor() {
-        return armor;
-    }
+	int health = 100;
+	int centerX;
+	int centerY;
+	private int boundingBoxBotX = 0;
+	private int boundingBoxBotY = 0;
 
-    public void update() {
-        if(Math.abs((int)distance)>=64) {
-            distance=0;
-            mPosX+=deltaPos[1];
-            mPosY+=deltaPos[0];
-            if(!canMove(mPosX+deltaPos[1], mPosY+deltaPos[0])) { pos.x=mPosY*64; pos.y=mPosX*64; findRoad();}
-        }
+	int locationX = 0;
+	int locationY = 0;
 
-        if (mPosX==gameMaps.targetMatrixPosition.x&& mPosY==gameMaps.targetMatrixPosition.y) {
-            alive = false;
-            player.health-=damage;
-        }
-        if(realTimeHealth<=0) {realTimeHealth=0; alive=false; gameField.player.coin+=reward;}
-    }
+	/**
+	 * 
+	 * @param row
+	 * @param column
+	 * @param allLandz
+	 */
+	public BasicMonster(int row, int column, BasicLand allLandz[][],
+			int healthz, GameWorld worldz) {
+		allLand = allLandz;
+		world = worldz;
+		health = healthz;
+	}
 
-    public void setPos_1(Position pos) {
-        this.pos = pos;
-    }
+	/**
+	 * sets its next move
+	 */
+	public void getNextMove() {
 
-    public void setPos(float x, float y) {
-        pos.setPosition(x, y);
-    }
+		if (allLand[row][column].getLandStartX() == moveX
+				&& allLand[row][column].getLandStartY() == moveY) {
+			centerOfALand = true;
+		}
+		if (centerOfALand) {
 
-    public String getTexturePath() {
-        return texturePath;
-    }
+			while (isAlive) {
+				if (direction == north) {
+					if (row - 1 > -1) {
+						if (allLand[row - 1][column].getCanAMonsterMoveHere()) {
+							direction = north;
+							centerOfALand = false;
+							row--;
+							break;
+						}
+					}
+					if (column - 1 > -1) {
+						if (allLand[row][column - 1].getCanAMonsterMoveHere()) {
+							direction = west;
+							centerOfALand = false;
+							column--;
+							break;
+						}
+					}
+					if (column + 1 < 25) {
+						if (allLand[row][column + 1].getCanAMonsterMoveHere()) {
+							direction = east;
+							centerOfALand = false;
+							column++;
+							break;
+						}
+					}
+				}
 
-    private boolean canMove(int x, int y) {
-        if(x<14&&x>=0&&y<24&&y>=0) {
-            if(gameField.gameMaps.map[x][y]>0) return true;
-        }
-        return false;
-    }
+				if (direction == east) {
 
-    private void move() {
-        if(!firstTime) {
-            pos.x+=deltaPos[0]*deltaMove()*speed/25;
-            pos.y+=deltaPos[1]*deltaMove()*speed/25;
-            distance+=deltaPos[0]*deltaMove()*speed/25+deltaPos[1]*deltaMove()*speed/25;
-        } else {
-            findRoad(); firstTime=false;
-            distance=0;
-        }
-    }
+					if (column + 1 < 25) {
+						if (allLand[row][column + 1].getCanAMonsterMoveHere()) {
+							direction = east;
+							centerOfALand = false;
+							column++;
+							break;
+						}
+					}
+					if (row - 1 > -1) {
+						if (allLand[row - 1][column].getCanAMonsterMoveHere()) {
+							direction = north;
+							centerOfALand = false;
+							row--;
+							break;
+						}
+					}
+					if (row + 1 < 25) {
+						if (allLand[row + 1][column].getCanAMonsterMoveHere()) {
+							direction = south;
+							centerOfALand = false;
+							row++;
+							break;
+						}
+					}
 
-    private void findRoad() {
-        if(canMove(mPosX, mPosY-1)) {
-            if(!(deltaPos[0]==1&&deltaPos[1]==0)) {
-                deltaPos[0]=-1;
-                deltaPos[1]=0; return;
-            }
-        }
+					break;
 
-        if(canMove(mPosX, mPosY+1)) {
-            if(!(deltaPos[0]==-1&&deltaPos[1]==0)) {
-                deltaPos[0]=1;
-                deltaPos[1]=0; return;}
-        }
+				} else if (direction == south) {
+					if (row + 1 < 25) {
+						if (allLand[row + 1][column].getCanAMonsterMoveHere()) {
+							direction = south;
+							centerOfALand = false;
+							row++;
+							break;
+						}
+					}
+					if (column - 1 > -1) {
+						if (allLand[row][column - 1].getCanAMonsterMoveHere()) {
+							direction = west;
+							centerOfALand = false;
+							column--;
+							break;
+						}
+					}
+					if (column + 1 < 25) {
+						if (allLand[row][column + 1].getCanAMonsterMoveHere()) {
+							direction = east;
+							centerOfALand = false;
+							column++;
+							break;
+						}
+					}
 
-        if(canMove(mPosX-1, mPosY)) {
-            if(!(deltaPos[0]==0&&deltaPos[1]==1)) {
-                deltaPos[0]=0;
-                deltaPos[1]=-1; return;}
-        }
+				} else if (direction == west) {
 
-        if(canMove(mPosX+1, mPosY)) {
-            if(!(deltaPos[0]==0&&deltaPos[1]==-1)) {
-                deltaPos[0]=0;
-                deltaPos[1]=1; return;}
-        }
+					if (column - 1 > -1) {
+						if (allLand[row][column - 1].getCanAMonsterMoveHere()) {
+							direction = west;
+							centerOfALand = false;
+							column--;
+							break;
+						}
+					}
+					if (row - 1 > -1) {
+						if (allLand[row - 1][column].getCanAMonsterMoveHere()) {
+							direction = north;
+							centerOfALand = false;
+							row--;
+							break;
+						}
+					}
+					if (row + 1 < 25) {
+						if (allLand[row + 1][column].getCanAMonsterMoveHere()) {
+							direction = south;
+							centerOfALand = false;
+							row++;
+							break;
+						}
+					}
+				}
 
-        deltaPos[0]=0;
-        deltaPos[1]=0;
-    }
+			}
 
+		}
 
+		if (direction == north) {
+			moveY--;
+		} else if (direction == east) {
+			moveX++;
+		} else if (direction == south) {
+			moveY++;
+		} else if (direction == west) {
+			moveX--;
+		}
 
-    public void run() {
-        if (active && alive) {
-            move();
-            update();
-        }
-    }
+	}
 
+	public void addToIncomingBullets(Bullet incoming)
+	{
+		incomingBullets.add(incoming);
+	}
+	
+	public void letIncomingBulletsTargetsDead()
+	{
+		for(int i=0; i<incomingBullets.size();i++)
+		{
+			if(incomingBullets.get(i)!=null)
+			{
+				incomingBullets.get(i).setTargetIsAlive(false);
+			}
+		}
+	}
+	
+	
+	/**
+	 * @return the health
+	 */
+	public int getHealth() {
+		return health;
+	}
 
+	/**
+	 * Draws the object
+	 * 
+	 * @param g
+	 * @param width
+	 * @param height
+	 * @param numberOfRows
+	 * @param numberOfColumns
+	 */
+	public void draw(Graphics g, int width, int height, int numberOfRows,
+			int numberOfColumns) {
+		int widthOfIcon = (width / numberOfColumns) + 1;
+		int heightOfIcon = (height / numberOfRows) + 1;
+		findBottomOfBoundingBox(widthOfIcon, heightOfIcon);
+		int startX = moveX;
+		int startY = moveY;
+		centerX = startX + (widthOfIcon / 2);
+		centerY = startY + (heightOfIcon / 2);
+		locationX = startX;
+		locationY = startY;
+		g.setColor(Color.black);
+		if(health<=160)
+		{
+			g.setColor(Color.GREEN);
+		}
+		if(health<=120)
+			g.setColor(Color.BLUE);
+		if (health <= 80)
+			g.setColor(Color.YELLOW);
+		if (health <= 40)
+			g.setColor(Color.RED);
+		g.fillRect(startX, startY, widthOfIcon, heightOfIcon);
+	}
 
-    public void draw(Graphics g) {                 //Vẽ máu
-        g.drawImage(new ImageIcon(texturePath).getImage(), (int)pos.x-20, (int)pos.y-20, null);
-        g.setColor(Color.RED);
-        g.fillRect((int)pos.x-20, (int)pos.y-28, 40*realTimeHealth/health, 5);
-    }
+	/**
+	 * @return the killReward
+	 */
+	public int getKillReward() {
+		return killReward;
+	}
+
+	/**
+	 * @param killReward
+	 *            the killReward to set
+	 */
+	public void setKillReward(int killReward) {
+		this.killReward = killReward;
+	}
+
+	/**
+	 * makes the monster move
+	 */
+	public void run() {
+
+		while (true) {
+			if (isAlive) {
+				getNextMove();
+
+				try {
+					Thread.sleep(speedOfMonster);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * @param health
+	 *            the health to set
+	 */
+	public void setHealth(int health) {
+		this.health = health;
+	}
+
+	public void findBottomOfBoundingBox(int widthOfIcon, int heightOfIcon) {
+		boundingBoxBotX = moveX + widthOfIcon;
+		boundingBoxBotY = moveY + heightOfIcon;
+	}
+
+	/**
+	 * @return the moveX
+	 */
+	public int getMoveX() {
+		return moveX;
+	}
+
+	/**
+	 * @return the moveY
+	 */
+	public int getMoveY() {
+		return moveY;
+	}
+
+	/**
+	 * @return the centerX
+	 */
+	public int getCenterX() {
+		return centerX;
+	}
+
+	/**
+	 * @return the centerY
+	 */
+	public int getCenterY() {
+		return centerY;
+	}
+
+	/**
+	 * @return the boundingBoxBotX
+	 */
+	public int getBoundingBoxBotX() {
+		return boundingBoxBotX;
+	}
+
+	/**
+	 * @return the boundingBoxBotY
+	 */
+	public int getBoundingBoxBotY() {
+		return boundingBoxBotY;
+	}
 }
