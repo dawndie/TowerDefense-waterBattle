@@ -1,58 +1,173 @@
-package towerdefense.gameEntity;
+package Bullets;
 
-import static towerDefense.Clock.*;
-import towerdefense.GameMaps;
-import towerdefense.Position;
-import towerdefense.gameEntity.enemy.Enemy;
+import java.awt.Color;
+import java.awt.Graphics;
 
-public class Bullet implements towerdefense.gameEntity.GameEntity {
-    public float drX, drY;
-    public boolean readyToFire=false;
-    public String texturePath;
-    public GameMaps gameMaps;
-    public Enemy enemy;
-    public Position pos;
-    public int bulletSpeed;
-    public int shootSpeed;
-    public int damage;
-    public int range;
-    public boolean active;
-    Position stockPosition;
-    public Bullet(int bulletSpeed, int shootSpeed, int damage, int range, String path) {
-        this.shootSpeed=shootSpeed;
-        active=false;
-        this.bulletSpeed=bulletSpeed;
-        this.damage=damage;
-        this.range=range;
-        this.texturePath=path;
-        pos= new Position();
-    }
+import Monsters.BasicMonster;
+import Towers.Tower;
 
-    public void setTexturePath(String path) {
-        this.texturePath= path;
-    }
+public abstract class Bullet implements Runnable {
+	public static final int WIDTH = 10;
+	public static final int HEIGHT = 10;
+	private double xPos = 0, yPos = 0;
+	private double vx, vy;
+	private int bulletTimer = 500;
+	private int damageWidth;
 
-    public void setPos(float x, float y) {
-        pos.setPosition(x, y);
-    }
+	private int damageHeight;
 
-    public void setStockPosition(Position stockPosition) {
-        this.stockPosition = stockPosition;
-    }
+	private Tower tower;
+	private BasicMonster target;
+	/**
+	 * target will be alive when a bullet is made 
+	 */
+	private Boolean targetIsAlive=true;
+	/**
+	 * constructor for bullet
+	 * 
+	 * @param towerz
+	 * @param bulletSpeed
+	 */
+	public Bullet(Tower towerz, double startX, double startY, double dx,
+			double dy, int damageWidthz, int damageHeightz, BasicMonster targetz) {
+		xPos = startX;
+		yPos = startY;
+		vx = dx;
+		vy = dy;
+		tower = towerz;
+		damageWidth = damageWidthz;
+		damageHeight = damageHeightz;
+		target = targetz;
+		target.addToIncomingBullets(this);
+	}
 
-    public void move() {
+	/**
+	 * runs the bullet
+	 */
+	public void run() {
+		boolean isAlive = true;
+		while (isAlive) {
+			
+			if(targetIsAlive)
+			{
+				monsterChecker();
+			}
+			xPos += vx;
+			yPos += vy;
+			bulletTimer--;
+			
+			if (tower.getWorld().withinBounds(xPos, yPos, this)
+					&& (bulletTimer > 0)) {
+				
+				
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+			} else {
+				isAlive = false;
+				tower.reportBulletEndOfLife(this);
+			}
+		}
+	
+	}
 
-        if(active&&readyToFire) {
-            pos.x+=drX*deltaMove()/bulletSpeed;
-            pos.y+=drY*deltaMove()/bulletSpeed;
+	public void monsterChecker() {
 
-            if(pos.distance(enemy.pos)<=10) {
-                enemy.realTimeHealth-=damage;
-                active=false;
-                readyToFire=false;
-                return;
-            } else if(stockPosition.distance(enemy.pos)>range) {active=false; readyToFire=false; return;}
-        }
-    }
+		
+		double xDistance = target.getCenterX() - getxPos();
+		double yDistance = target.getCenterY() - getyPos();
 
+		double speed = getTower().getMaxBulletSpeed();
+
+		double scale = speed
+				/ Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+
+		double vx = scale * xDistance;
+		double vy = scale * yDistance;
+
+		setVx(vx);
+		setVy(vy);
+
+	}
+
+	public abstract Color getBulletColor();
+
+	public void draw(Graphics g) {
+		if (tower.getTowerName().equals("Mortar")) {
+
+			g.setColor(getColorOfRange());
+			g.fillOval((int) (xPos - damageWidth) + 7,
+					(int) (yPos - damageHeight) + 7,
+					(int) (damageWidth * 2) - 14, (int) (damageHeight * 2) - 14);
+
+		}
+
+		g.setColor(getBulletColor());
+		g.fillOval((int) (xPos - WIDTH / 2), (int) (yPos - HEIGHT / 2), WIDTH,
+				HEIGHT);
+
+	}
+
+	public abstract Color getColorOfRange();
+
+	/**
+	 * @return the damageWidth
+	 */
+	public int getDamageWidth() {
+		return damageWidth;
+	}
+
+	/**
+	 * @return the damageHeight
+	 */
+	public int getDamageHeight() {
+		return damageHeight;
+	}
+
+	/**
+	 * @return the xPos
+	 */
+	public double getxPos() {
+		return xPos;
+	}
+
+	/**
+	 * @return the yPos
+	 */
+	public double getyPos() {
+		return yPos;
+	}
+
+	/**
+	 * @param targetIsAlive the targetIsAlive to set
+	 */
+	public void setTargetIsAlive(Boolean targetIsAlive) {
+		this.targetIsAlive = targetIsAlive;
+	}
+
+	/**
+	 * @param vx
+	 *            the vx to set
+	 */
+	public void setVx(double vx) {
+		this.vx = vx;
+	}
+
+	/**
+	 * @param vy
+	 *            the vy to set
+	 */
+	public void setVy(double vy) {
+		this.vy = vy;
+	}
+
+	/**
+	 * @return the tower
+	 */
+	public Tower getTower() {
+		return tower;
+	}
 }
