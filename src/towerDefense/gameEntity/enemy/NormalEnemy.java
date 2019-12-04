@@ -9,10 +9,6 @@ public class NormalEnemy extends towerdefense.gameEntity.enemy.Enemy {
         this.player=player;
         this.gameField=gameField;
     }
-    public void setTexturePath(String s) {
-        this.texturePath=s;
-    }
-    public static String getPath() {
-        return "res\\GameEntity\\Enemy\\NormalEnemy.png";
-    }
+  
+   
 }
