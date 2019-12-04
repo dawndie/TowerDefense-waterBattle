@@ -1,4 +1,4 @@
-package GamePanels;
+
 
 
 
@@ -88,18 +88,7 @@ public class GameMenuBar extends JMenuBar implements ActionListener {
 		if (obj == FILE_OPTION[0]) {
 			project.reset();
 		}
-		if (obj == FILE_OPTION[1]) {
-			try{
-			project.reset();
-			}
-			catch(NullPointerException ez)
-			{
-				
-			}
-			project.getGameWorld().getLoading().fileLoader();
-			project.getGameWorld().getLoading().readFile();
-			project.getGameWorld().repaint();
-		}
+		
 		if (obj == FILE_OPTION[4]) {
 			System.exit(0);
 		}
